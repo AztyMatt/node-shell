@@ -1,2 +1,2 @@
-const startRepl = require('./REPL/repl');
+const { startRepl } = require('./REPL/repl');
 startRepl();

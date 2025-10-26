@@ -1,51 +1,59 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { HELP_TOPICS } = require('./help');
+const fs = require('fs')
+const path = require('path')
+const os = require('os')
+const { HELP_TOPICS } = require('./help')
+
+function isPathLike(token) {
+    return token.startsWith('/') ||
+        token.startsWith('./') ||
+        token.startsWith('../') ||
+        token.startsWith('~')
+}
 
 function completerFactory(COMMANDS) {
     return function completer(line) {
+        const lastSpace = line.lastIndexOf(' ')
+        const token = line.slice(lastSpace + 1)
+        const hasArgs = lastSpace !== -1
+
         if (line.startsWith('help ')) {
-            const q = line.slice(5);
-            const topics = Object.keys(HELP_TOPICS || {});
-            const matches = topics.filter(t => t.startsWith(q));
-            return [matches.length ? matches : topics, line];
+            const q = token
+            const topics = Object.keys(HELP_TOPICS || {})
+            const hits = topics.filter(t => t.startsWith(q))
+            return [hits.length ? hits : topics, q]
         }
 
-        if (
-            line.startsWith('/') ||
-            line.startsWith('./') ||
-            line.startsWith('../') ||
-            line.startsWith('~')
-        ) {
-            const home = os.homedir();
-            const expanded = line.startsWith('~') ? path.join(home, line.slice(1)) : line;
-            const dir = expanded.endsWith(path.sep) ? expanded : path.dirname(expanded);
-            const base = expanded.endsWith(path.sep) ? '' : path.basename(expanded);
+        if (isPathLike(token)) {
+            const home = os.homedir()
+            const expanded = token.startsWith('~') ? path.join(home, token.slice(1)) : token
+            const dir = expanded.endsWith(path.sep) ? expanded : path.dirname(expanded)
+            const base = expanded.endsWith(path.sep) ? '' : path.basename(expanded)
 
             try {
-                const entries = fs
-                    .readdirSync(dir, { withFileTypes: true })
+                const entries = fs.readdirSync(dir, { withFileTypes: true })
                     .map(d => (d.isDirectory() ? d.name + path.sep : d.name))
-                    .filter(name => name.startsWith(base));
+                    .filter(name => name.startsWith(base))
 
-                const matches = entries.map(name =>
-                    (expanded.endsWith(path.sep)
+                const suggestions = entries.map(name => {
+                    const completed = expanded.endsWith(path.sep)
                         ? expanded + name
                         : path.join(path.dirname(expanded), name)
-                    ).replace(home, '~')
-                );
+                    return token.startsWith('~') ? completed.replace(home, '~') : completed
+                })
 
-                return [matches.length ? matches : entries, line];
+                return [suggestions.length ? suggestions : entries, token]
             } catch {
-                return [[], line];
+                return [[], token]
             }
         }
 
-        const first = line.split(/\s+/)[0];
-        const matches = COMMANDS.filter(cmd => cmd.startsWith(first));
-        return [matches.length ? matches : COMMANDS, line];
-    };
+        if (!hasArgs) {
+            const hits = COMMANDS.filter(cmd => cmd.startsWith(token))
+            return [hits.length ? hits : COMMANDS, token]
+        }
+
+        return [[], token]
+    }
 }
 
-module.exports = { completerFactory };
+module.exports = { completerFactory }
