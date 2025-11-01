@@ -9,7 +9,6 @@ function Command(name = null, args = [], redirections = {}) {
 const WORD_PART = {
     TEXT: 'TEXT',
     VAR: 'VAR',
-    SUBCMD: 'SUBCMD',
 };
 
 function TextPart(value) {
@@ -20,14 +19,10 @@ function VarPart(name) {
     return { type: WORD_PART.VAR, name };
 }
 
-function SubCommandPart(pipelineAst) {
-    return { type: WORD_PART.SUBCMD, pipeline: pipelineAst };
-}
-
 function Word(parts = []) {
     return { type: 'Word', parts };
 }
 
 module.exports = {
-    Pipeline, Command, Word, TextPart, VarPart, SubCommandPart, WORD_PART
+    Pipeline, Command, Word, TextPart, VarPart, WORD_PART
 };

@@ -7,6 +7,8 @@ const { completerFactory } = require('./completer');
 const HISTORY_FILE = path.resolve(__dirname, 'shell-history');
 const COMMANDS = ['help', 'exit', 'clear'];
 
+const { parse } = require('../Command-Parser/parser');
+
 const { BOLD, ITALIC, GREEN, LIGHT_GREEN, RESET } = require('../color');
 const PROMPT = `${BOLD}${GREEN}node-shell>${RESET} `;
 const MESSAGE = `
@@ -71,7 +73,12 @@ function startRepl() {
             return;
         }
 
-        console.log(`You typed: ${input}`);
+        try {
+            const ast = parse(input);
+            console.dir(ast, { depth: null, colors: true });
+        } catch (err) {
+            console.error('Parse error:', err.message);
+        }
         rl.prompt();
     });
 

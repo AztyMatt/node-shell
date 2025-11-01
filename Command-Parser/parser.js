@@ -1,7 +1,7 @@
 const { TOKEN } = require('./tokens');
 const { lexer } = require('./lexer');
 const {
-    Pipeline, Command, Word, TextPart, VarPart, SubCommandPart
+    Pipeline, Command, Word, TextPart, VarPart
 } = require('./ast');
 
 function* scanVarParts(str, startIdx) {
@@ -45,7 +45,7 @@ function parseWordParts(str) {
         const sub = scanSubCommand(str, i);
         if (sub) {
             const innerAst = parse(sub.content);
-            parts.push(SubCommandPart(innerAst));
+            parts.push(innerAst);
             i += sub.len;
             continue;
         }
@@ -110,7 +110,8 @@ function parseTokens(tokens) {
             case TOKEN.REDIR_OUT: {
                 const next = tokens[i + 1];
                 if (!next || next.type !== TOKEN.WORD) throw new Error('Expected target after ">"');
-                current.redirections.stdout = { target: next.value, append: false };
+                const word = parseWordParts(next.value);
+                current.redirections.stdout = { target: word, append: false };
                 i += 2;
                 break;
             }
@@ -118,7 +119,8 @@ function parseTokens(tokens) {
             case TOKEN.REDIR_OUT_APPEND: {
                 const next = tokens[i + 1];
                 if (!next || next.type !== TOKEN.WORD) throw new Error('Expected target after ">>"');
-                current.redirections.stdout = { target: next.value, append: true };
+                const word = parseWordParts(next.value);
+                current.redirections.stdout = { target: word, append: true };
                 i += 2;
                 break;
             }
@@ -126,7 +128,8 @@ function parseTokens(tokens) {
             case TOKEN.REDIR_IN: {
                 const next = tokens[i + 1];
                 if (!next || next.type !== TOKEN.WORD) throw new Error('Expected target after "<"');
-                current.redirections.stdin = { target: next.value };
+                const word = parseWordParts(next.value);
+                current.redirections.stdin = { target: word };
                 i += 2;
                 break;
             }
@@ -134,15 +137,16 @@ function parseTokens(tokens) {
             case TOKEN.REDIR_FD: {
                 const next = tokens[i + 1];
                 if (!next || next.type !== TOKEN.WORD) throw new Error(`Expected target after "${t.fd}${t.op}"`);
+                const word = parseWordParts(next.value);
                 const append = (t.op === '>>');
                 if (t.fd === '2') {
-                    current.redirections.stderr = { target: next.value, append };
+                    current.redirections.stderr = { target: word, append };
                 } else if (t.fd === '1') {
-                    current.redirections.stdout = { target: next.value, append };
+                    current.redirections.stdout = { target: word, append };
                 } else if (t.fd === '0') {
-                    current.redirections.stdin = { target: next.value };
+                    current.redirections.stdin = { target: word };
                 } else {
-                    current.redirections[`fd${t.fd}`] = { target: next.value, append };
+                    current.redirections[`fd${t.fd}`] = { target: word, append };
                 }
                 i += 2;
                 break;
