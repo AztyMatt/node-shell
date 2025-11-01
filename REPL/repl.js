@@ -6,15 +6,23 @@ const { printHelp } = require('./help');
 const { completerFactory } = require('./completer');
 const HISTORY_FILE = path.resolve(__dirname, 'shell-history');
 const COMMANDS = ['help', 'exit', 'clear'];
-const completer = completerFactory(COMMANDS);
+
+const { BOLD, ITALIC, GREEN, LIGHT_GREEN, RESET } = require('../color');
+const PROMPT = `${BOLD}${GREEN}node-shell>${RESET} `;
+const MESSAGE = `
+${LIGHT_GREEN}Welcome to my node.js shell !${RESET}
+${ITALIC}${LIGHT_GREEN}Type "exit" to quit.${RESET}
+`;
 
 function startRepl() {
+    const completer = completerFactory(COMMANDS);
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
         completer: completer,
         historySize: 1000,
-        prompt: 'node-shell> '
+        prompt: PROMPT
     });
 
     try {
@@ -25,7 +33,8 @@ function startRepl() {
     } catch (err) {
         console.error('Failed to load history:', err);
     }
-    console.log('Welcome to my node.js shell! Type "exit" to quit.');
+
+    console.log(MESSAGE);
     rl.prompt();
 
     rl.on('line', (line) => {
