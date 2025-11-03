@@ -9,10 +9,11 @@ function isDigit(ch) {
 }
 
 function matchOperator(input, i) {
-    if (input.startsWith('>>', i)) return { op: '>>', len: 2 };
-    if (input.startsWith('|', i)) return { op: '|', len: 1 };
-    if (input.startsWith('>', i)) return { op: '>', len: 1 };
-    if (input.startsWith('<', i)) return { op: '<', len: 1 };
+    for (const { sym, type } of OPERATORS) {
+        if (input.startsWith(sym, i)) {
+            return { type, len: sym.length };
+        }
+    }
     return null;
 }
 
@@ -45,10 +46,7 @@ function lexer(input) {
 
         const op = matchOperator(input, i);
         if (op) {
-            if (op.op === '|') tokens.push({ type: TOKEN.PIPE });
-            else if (op.op === '>') tokens.push({ type: TOKEN.REDIR_OUT });
-            else if (op.op === '>>') tokens.push({ type: TOKEN.REDIR_OUT_APPEND });
-            else if (op.op === '<') tokens.push({ type: TOKEN.REDIR_IN });
+            tokens.push({ type: op.type });
             i += op.len;
             continue;
         }
