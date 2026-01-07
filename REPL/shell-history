@@ -75,3 +75,41 @@ help history
 help history
 help
 help
+ls -la
+ls -la
+cd ..
+ls -la
+cd..
+cd ..
+ls -la
+cd..
+cd ..
+ls
+cd node-shell
+ls
+cls
+echo $USER
+ls
+echo "test" > file.txt
+clear
+cls
+echo "test" > file.txt
+cls
+clear
+ls
+ls -la
+cd..
+cd ..
+ls -la
+cd node-shell
+ls -la
+cls
+clear
+ls -la
+cd Executor
+ls -la
+cd..
+cd ..
+ls -la
+echo "test" > file.txt
+exit

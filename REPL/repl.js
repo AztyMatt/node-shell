@@ -8,6 +8,7 @@ const HISTORY_FILE = path.resolve(__dirname, 'shell-history');
 const COMMANDS = ['help', 'exit', 'clear'];
 
 const { parse } = require('../Command-Parser/parser');
+const { execute } = require('../Executor/executor');
 
 const { BOLD, ITALIC, GREEN, LIGHT_GREEN, RESET } = require('../color');
 const PROMPT = `${BOLD}${GREEN}node-shell>${RESET} `;
@@ -39,7 +40,7 @@ function startRepl() {
     console.log(MESSAGE);
     rl.prompt();
 
-    rl.on('line', (line) => {
+    rl.on('line', async (line) => {
         const input = line.trim();
 
         if (input !== '') {
@@ -75,9 +76,14 @@ function startRepl() {
 
         try {
             const ast = parse(input);
-            console.dir(ast, { depth: null, colors: true });
+            // Suspension temporaire des entrées utilisateur
+            rl.pause();
+            // Exécution de la commande (interne ou externe)
+            await execute(ast);
+            // Reprise du prompt
+            rl.resume();
         } catch (err) {
-            console.error('Parse error:', err.message);
+            console.error('Shell Error:', err.message);
         }
         rl.prompt();
     });
