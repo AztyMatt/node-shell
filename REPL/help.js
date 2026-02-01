@@ -9,10 +9,14 @@ USAGE
 
 BUILT-IN COMMANDS
     cd                  Change current directory
+    pwd                 Print current directory
     exit                Exit the shell
     clear               Clear the terminal screen
     help                Show this help message
     ls                  List directory contents
+    mkdir               Create directories (recursive)
+    touch               Create file / update timestamp
+    rm                  Remove files/directories (recursive)
 
 KEYBOARD SHORTCUTS
     ↑ / ↓               Navigate through command history
@@ -61,11 +65,15 @@ SIGNALS — Interrupts & session closing
 BUILT-INS — Internal commands
 
 • cd      Change current directory.
+• pwd     Print current directory.
 • exit    Quit the shell immediately.
 • clear   Clear the terminal screen.
 • help    Display this help or topic-specific help (help <topic>).
 • ls      List directory contents.
           Options: -a/--all, -l, -h, -R, -t, -S, -F
+• mkdir   Create directory(ies) (recursive).
+• touch   Create file(s) or update timestamps.
+• rm      Remove file(s) or directory(ies) (recursive).
 `
 };
 

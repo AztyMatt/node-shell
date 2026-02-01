@@ -6,7 +6,7 @@ const path = require('path');
 const { printHelp } = require('./help');
 const { completerFactory } = require('./completer');
 const HISTORY_FILE = path.resolve(__dirname, 'shell-history');
-const COMMANDS = ['help', 'exit', 'clear', 'cd', 'ls'];
+const COMMANDS = ['help', 'exit', 'clear', 'cd', 'pwd', 'ls', 'mkdir', 'touch', 'rm'];
 
 const { parse } = require('../Command-Parser/parser');
 const { execute } = require('../Executor/executor');
@@ -44,6 +44,17 @@ function startRepl() {
         completer: completer,
         historySize: 1000,
     });
+
+    const previousKeySymbol = Object.getOwnPropertySymbols(rl).find(
+        (s) => s.description === '_previousKey'
+    );
+    if (previousKeySymbol && rl.input?.prependListener) {
+        rl.input.prependListener('keypress', (_str, key) => {
+            if (key?.name === 'tab') {
+                rl[previousKeySymbol] = { name: 'tab' };
+            }
+        });
+    }
 
     function prompt() {
         rl.setPrompt(getPrompt());
