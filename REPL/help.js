@@ -8,9 +8,11 @@ USAGE
     help <topic>        Show detailed help for a specific topic (e.g. help history)
 
 BUILT-IN COMMANDS
+    cd                  Change current directory
     exit                Exit the shell
     clear               Clear the terminal screen
     help                Show this help message
+    ls                  List directory contents
 
 KEYBOARD SHORTCUTS
     ↑ / ↓               Navigate through command history
@@ -58,9 +60,12 @@ SIGNALS — Interrupts & session closing
     builtins: `
 BUILT-INS — Internal commands
 
+• cd      Change current directory.
 • exit    Quit the shell immediately.
 • clear   Clear the terminal screen.
 • help    Display this help or topic-specific help (help <topic>).
+• ls      List directory contents.
+          Options: -a/--all, -l, -h, -R, -t, -S, -F
 `
 };
 

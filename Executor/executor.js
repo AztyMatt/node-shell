@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { spawn } = require('child_process');
-const { BUILTINS } = require('./builtins');
+const { BUILTINS } = require('./commands/builtin-commands');
 
 function expandWord(word) {
     return word.parts.map(part => {
@@ -8,6 +8,30 @@ function expandWord(word) {
         if (part.type === 'VAR') return process.env[part.name] || '';
         return '';
     }).join('');
+}
+
+function createWriteFn(target, fallbackStream) {
+    if (typeof target === 'number') {
+        return (chunk) => {
+            fs.writeSync(target, chunk);
+        };
+    }
+    if (target && typeof target.write === 'function') {
+        return (chunk) => {
+            target.write(chunk);
+        };
+    }
+    return (chunk) => {
+        fallbackStream.write(chunk);
+    };
+}
+
+function closeExtraFds(stdio) {
+    stdio.forEach(fd => {
+        if (typeof fd === 'number' && fd > 2) {
+            try { fs.closeSync(fd); } catch {}
+        }
+    });
 }
 
 function openRedirectionFile(redir) {
@@ -25,6 +49,7 @@ function executeCommand(cmdAst, stdin, stdout) {
     return new Promise((resolve) => {
         const cmdName = expandWord({ parts: [{ type: 'TEXT', value: cmdAst.name }] });
         const args = cmdAst.args.map(expandWord);
+        const displayName = cmdName;
         const stdio = [stdin, stdout, process.stderr];
         
         try {
@@ -40,7 +65,14 @@ function executeCommand(cmdAst, stdin, stdout) {
         }
         
         if (BUILTINS[cmdName]) {
-            const ret = BUILTINS[cmdName](args);
+            const io = {
+                writeStdout: createWriteFn(stdio[1], process.stdout),
+                writeStderr: createWriteFn(stdio[2], process.stderr),
+                stdoutIsTty: stdio[1] === 'inherit' && Boolean(process.stdout.isTTY),
+                stderrIsTty: stdio[2] === process.stderr && Boolean(process.stderr.isTTY),
+            };
+            const ret = BUILTINS[cmdName](args, io);
+            closeExtraFds(stdio);
             resolve(ret);
             return;
         }
@@ -48,11 +80,12 @@ function executeCommand(cmdAst, stdin, stdout) {
         const child = spawn(cmdName, args, { stdio, env: process.env });
         
         child.on('error', (err) => {
-            console.error(`${cmdName}: command not found`);
+            console.error(`${displayName}: command not found`);
+            closeExtraFds(stdio);
             resolve(127);
         });
         child.on('close', (code) => {
-            stdio.forEach(fd => { if (typeof fd === 'number' && fd > 2) fs.closeSync(fd); });
+            closeExtraFds(stdio);
             resolve(code === null ? 1 : code);
         });
     });
@@ -67,5 +100,3 @@ async function executePipeline(pipelineAst) {
 }
 
 module.exports = { execute: executePipeline };
-
-

@@ -1,21 +1,39 @@
 const readline = require('readline');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const { printHelp } = require('./help');
 const { completerFactory } = require('./completer');
 const HISTORY_FILE = path.resolve(__dirname, 'shell-history');
-const COMMANDS = ['help', 'exit', 'clear'];
+const COMMANDS = ['help', 'exit', 'clear', 'cd', 'ls'];
 
 const { parse } = require('../Command-Parser/parser');
 const { execute } = require('../Executor/executor');
 
 const { BOLD, ITALIC, GREEN, LIGHT_GREEN, RESET } = require('../color');
-const PROMPT = `${BOLD}${GREEN}node-shell>${RESET} `;
 const MESSAGE = `
 ${LIGHT_GREEN}Welcome to my node.js shell !${RESET}
 ${ITALIC}${LIGHT_GREEN}Type "exit" to quit.${RESET}
 `;
+
+function formatCwdForPrompt() {
+    try {
+        const cwd = process.cwd();
+        const homeDir = os.homedir();
+        if (!homeDir) return cwd;
+        if (cwd === homeDir) return '~';
+        if (cwd.startsWith(homeDir + path.sep)) return `~${cwd.slice(homeDir.length)}`;
+        return cwd;
+    } catch {
+        return '?';
+    }
+}
+
+function getPrompt() {
+    const cwd = formatCwdForPrompt();
+    return `${BOLD}${GREEN}node-shell:${RESET}${BOLD}${LIGHT_GREEN}${cwd}${RESET}${BOLD}${GREEN}>${RESET} `;
+}
 
 function startRepl() {
     const completer = completerFactory(COMMANDS);
@@ -25,8 +43,12 @@ function startRepl() {
         output: process.stdout,
         completer: completer,
         historySize: 1000,
-        prompt: PROMPT
     });
+
+    function prompt() {
+        rl.setPrompt(getPrompt());
+        rl.prompt();
+    }
 
     try {
         if (fs.existsSync(HISTORY_FILE)) {
@@ -38,7 +60,7 @@ function startRepl() {
     }
 
     console.log(MESSAGE);
-    rl.prompt();
+    prompt();
 
     rl.on('line', async (line) => {
         const input = line.trim();
@@ -52,20 +74,20 @@ function startRepl() {
         }
 
         if (input === '') {
-            rl.prompt();
+            prompt();
             return;
         }
 
         if (input === 'clear') {
             console.clear();
-            rl.prompt();
+            prompt();
             return;
         }
 
         if (input.startsWith('help')) {
             const parts = input.split(/\s+/).slice(1);
             printHelp(parts);
-            rl.prompt();
+            prompt();
             return;
         }
 
@@ -76,16 +98,13 @@ function startRepl() {
 
         try {
             const ast = parse(input);
-            // Suspension temporaire des entrées utilisateur
             rl.pause();
-            // Exécution de la commande (interne ou externe)
             await execute(ast);
-            // Reprise du prompt
             rl.resume();
         } catch (err) {
             console.error('Shell Error:', err.message);
         }
-        rl.prompt();
+        prompt();
     });
 
     rl.on('close', () => {
