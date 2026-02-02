@@ -43,12 +43,13 @@ function parseRmArgs(args) {
     return { opts, targets, unknown };
 }
 
-function resolveTarget(rawTarget) {
-    return path.resolve(process.cwd(), expandHome(rawTarget));
+function resolveTarget(rawTarget, env) {
+    return path.resolve(process.cwd(), expandHome(rawTarget, env));
 }
 
 function rm(args, io) {
     const { writeStderr } = normalizeIo(io);
+    const env = io?.env || process.env;
     const { opts, targets, unknown } = parseRmArgs(args);
 
     if (unknown.length) {
@@ -63,7 +64,7 @@ function rm(args, io) {
 
     let exitCode = 0;
     for (const rawTarget of targets) {
-        const resolved = resolveTarget(rawTarget);
+        const resolved = resolveTarget(rawTarget, env);
         try {
             fs.rmSync(resolved, {
                 recursive: opts.recursive,

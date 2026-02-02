@@ -5,6 +5,10 @@ const { pwd } = require('./pwd');
 const { mkdir } = require('./mkdir');
 const { touch } = require('./touch');
 const { rm } = require('./rm');
+const { echo } = require('./echo');
+const { export: exportBuiltin } = require('./export');
+const { env } = require('./env');
+const { unset } = require('./unset');
 
 const BUILTINS = {
     exit,
@@ -14,6 +18,10 @@ const BUILTINS = {
     mkdir,
     touch,
     rm,
+    echo,
+    export: exportBuiltin,
+    env,
+    unset,
 };
 
 module.exports = { BUILTINS };

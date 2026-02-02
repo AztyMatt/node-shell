@@ -116,8 +116,8 @@ function decorateName(name, stat, opts, useColor) {
     return `${name}${suffix}`;
 }
 
-function resolveTarget(rawTarget) {
-    const expanded = expandHome(rawTarget);
+function resolveTarget(rawTarget, env) {
+    const expanded = expandHome(rawTarget, env);
     return path.resolve(process.cwd(), expanded);
 }
 
@@ -212,6 +212,7 @@ function printDirectory(dirPath, displayPath, opts, ctx, depth) {
 
 function ls(args, io) {
     const { writeStdout, writeStderr } = normalizeIo(io);
+    const env = io?.env || process.env;
     const useColor = Boolean(io?.stdoutIsTty);
 
     const { opts, targets, unknown } = parseLsArgs(args);
@@ -227,7 +228,7 @@ function ls(args, io) {
 
     for (let i = 0; i < actualTargets.length; i++) {
         const rawTarget = actualTargets[i];
-        const resolved = resolveTarget(rawTarget);
+        const resolved = resolveTarget(rawTarget, env);
 
         let stat;
         try {

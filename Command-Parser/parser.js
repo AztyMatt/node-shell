@@ -1,8 +1,14 @@
-const { TOKEN } = require('./tokens');
+const { TOKEN, LITERAL_DOLLAR } = require('./tokens');
 const { lexer } = require('./lexer');
 const {
-    Pipeline, Command, Word, TextPart, VarPart
+    Pipeline, Command, Word, TextPart, VarPart, SubCmdPart
 } = require('./ast');
+
+function decodeLiteralDollars(text) {
+    return text.includes(LITERAL_DOLLAR)
+        ? text.split(LITERAL_DOLLAR).join('$')
+        : text;
+}
 
 function* scanVarParts(str, startIdx) {
     if (str[startIdx] !== '$') return;
@@ -13,13 +19,15 @@ function* scanVarParts(str, startIdx) {
         const begin = i;
         while (i < str.length && str[i] !== '}') i++;
         const name = str.slice(begin, i);
-        if (i < str.length && str[i] === '}') i++;
-        yield { kind: 'var', name, len: i - startIdx };
+        const closed = (i < str.length && str[i] === '}');
+        if (closed) i++;
+        if (closed && /^[A-Z_][A-Z0-9_]*$/.test(name)) yield { kind: 'var', name, len: i - startIdx };
         return;
     }
 
     const begin = i;
-    while (i < str.length && /[A-Za-z0-9_]/.test(str[i])) i++;
+    if (!/[A-Z_]/.test(str[i])) return;
+    while (i < str.length && /[A-Z0-9_]/.test(str[i])) i++;
     const name = str.slice(begin, i);
     if (name) yield { kind: 'var', name, len: i - startIdx };
 }
@@ -28,12 +36,46 @@ function scanSubCommand(str, startIdx) {
     if (!(str[startIdx] === '$' && str[startIdx + 1] === '(')) return null;
     let i = startIdx + 2;
     let depth = 1;
+    let inSingle = false;
+    let inDouble = false;
+
     while (i < str.length && depth > 0) {
-        if (str[i] === '$' && str[i + 1] === '(') { depth++; i += 2; continue; }
-        if (str[i] === ')') { depth--; i++; continue; }
+        const ch = str[i];
+
+        if (!inSingle && ch === '\\') {
+            i += (i + 1 < str.length) ? 2 : 1;
+            continue;
+        }
+
+        if (!inDouble && ch === '\'') {
+            inSingle = !inSingle;
+            i++;
+            continue;
+        }
+
+        if (!inSingle && ch === '"') {
+            inDouble = !inDouble;
+            i++;
+            continue;
+        }
+
+        if (!inSingle && !inDouble && ch === '$' && str[i + 1] === '(') {
+            depth++;
+            i += 2;
+            continue;
+        }
+
+        if (!inSingle && !inDouble && ch === ')') {
+            depth--;
+            i++;
+            continue;
+        }
+
         i++;
     }
-    const inner = str.slice(startIdx + 2, i - 1);
+
+    const end = depth === 0 ? Math.max(startIdx + 2, i - 1) : i;
+    const inner = str.slice(startIdx + 2, end);
     return { content: inner, len: i - startIdx };
 }
 
@@ -45,7 +87,7 @@ function parseWordParts(str) {
         const sub = scanSubCommand(str, i);
         if (sub) {
             const innerAst = parse(sub.content);
-            parts.push(innerAst);
+            parts.push(SubCmdPart(innerAst));
             i += sub.len;
             continue;
         }
@@ -66,7 +108,19 @@ function parseWordParts(str) {
             j++;
         }
         const chunk = str.slice(i, j);
-        if (chunk) parts.push(TextPart(chunk));
+        if (chunk) {
+            parts.push(TextPart(decodeLiteralDollars(chunk)));
+            i = j;
+            continue;
+        }
+
+        // Fallback: treat unknown $-forms as a literal '$' to avoid stalling.
+        if (str[i] === '$') {
+            parts.push(TextPart('$'));
+            i++;
+            continue;
+        }
+
         i = j;
     }
 
@@ -84,12 +138,8 @@ function parseTokens(tokens) {
 
     const pushArg = (wordToken) => {
         const word = parseWordParts(wordToken.value);
-        if (!current.name) {
-            const asString = word.parts.map(p => p.type === 'TEXT' ? p.value : '').join('');
-            current.name = asString;
-        } else {
-            current.args.push(word);
-        }
+        if (!current.name) current.name = word;
+        else current.args.push(word);
     };
 
     let i = 0;

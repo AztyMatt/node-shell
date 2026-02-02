@@ -1,4 +1,4 @@
-const { TOKEN, OPERATORS } = require('./tokens');
+const { TOKEN, OPERATORS, LITERAL_DOLLAR } = require('./tokens');
 
 function isWhitespace(ch) {
     return ch === ' ' || ch === '\t';
@@ -6,6 +6,52 @@ function isWhitespace(ch) {
 
 function isDigit(ch) {
     return ch >= '0' && ch <= '9';
+}
+
+function scanCommandSubstitution(input, startIdx) {
+    if (!(input[startIdx] === '$' && input[startIdx + 1] === '(')) return null;
+
+    let i = startIdx + 2;
+    let depth = 1;
+    let inSingle = false;
+    let inDouble = false;
+
+    while (i < input.length && depth > 0) {
+        const ch = input[i];
+
+        if (!inSingle && ch === '\\') {
+            i += (i + 1 < input.length) ? 2 : 1;
+            continue;
+        }
+
+        if (!inDouble && ch === '\'') {
+            inSingle = !inSingle;
+            i++;
+            continue;
+        }
+
+        if (!inSingle && ch === '"') {
+            inDouble = !inDouble;
+            i++;
+            continue;
+        }
+
+        if (!inSingle && !inDouble && ch === '$' && input[i + 1] === '(') {
+            depth++;
+            i += 2;
+            continue;
+        }
+
+        if (!inSingle && !inDouble && ch === ')') {
+            depth--;
+            i++;
+            continue;
+        }
+
+        i++;
+    }
+
+    return { value: input.slice(startIdx, i), len: i - startIdx };
 }
 
 function matchOperator(input, i) {
@@ -56,6 +102,15 @@ function lexer(input) {
         let inDouble = false;
 
         while (i < input.length) {
+            if (!inSingle && input[i] === '$' && input[i + 1] === '(') {
+                const sub = scanCommandSubstitution(input, i);
+                if (sub) {
+                    buf.push(...sub.value);
+                    i += sub.len;
+                    continue;
+                }
+            }
+
             const ch = input[i];
 
             if (!inSingle && !inDouble) {
@@ -65,7 +120,8 @@ function lexer(input) {
 
             if (!inSingle && ch === '\\') {
                 if (i + 1 < input.length) {
-                    buf.push(input[i + 1]);
+                    const escaped = input[i + 1];
+                    buf.push(escaped === '$' ? LITERAL_DOLLAR : escaped);
                     i += 2;
                     continue;
                 } else {
@@ -86,13 +142,10 @@ function lexer(input) {
                 continue;
             }
 
-            if (inDouble && ch === '\\' && i + 1 < input.length) {
-                const next = input[i + 1];
-                if (next === '"' || next === '$' || next === '\\') {
-                    buf.push(next);
-                    i += 2;
-                    continue;
-                }
+            if (inSingle && ch === '$') {
+                buf.push(LITERAL_DOLLAR);
+                i++;
+                continue;
             }
 
             buf.push(ch);

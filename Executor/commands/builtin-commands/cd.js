@@ -5,17 +5,18 @@ const { expandHome, normalizeIo, writeLine } = require('./utils');
 function cd(args, io) {
     const { writeStderr } = normalizeIo(io);
     const rawTarget = args[0];
+    const env = io?.env || process.env;
 
     let target;
     if (!rawTarget) {
-        const home = process.env.HOME || os.homedir() || process.env.USERPROFILE;
+        const home = env.HOME || os.homedir() || env.USERPROFILE;
         if (!home) {
             writeLine(writeStderr, 'cd: HOME not set');
             return 1;
         }
         target = home;
     } else {
-        target = path.resolve(process.cwd(), expandHome(rawTarget));
+        target = path.resolve(process.cwd(), expandHome(rawTarget, env));
     }
 
     try {

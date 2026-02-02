@@ -31,12 +31,13 @@ function parseMkdirArgs(args) {
     return { opts, targets, unknown };
 }
 
-function resolveTarget(rawTarget) {
-    return path.resolve(process.cwd(), expandHome(rawTarget));
+function resolveTarget(rawTarget, env) {
+    return path.resolve(process.cwd(), expandHome(rawTarget, env));
 }
 
 function mkdir(args, io) {
     const { writeStderr } = normalizeIo(io);
+    const env = io?.env || process.env;
     const { opts, targets, unknown } = parseMkdirArgs(args);
 
     if (unknown.length) {
@@ -51,7 +52,7 @@ function mkdir(args, io) {
 
     let exitCode = 0;
     for (const rawTarget of targets) {
-        const resolved = resolveTarget(rawTarget);
+        const resolved = resolveTarget(rawTarget, env);
         try {
             fs.mkdirSync(resolved, { recursive: opts.recursive });
         } catch (err) {

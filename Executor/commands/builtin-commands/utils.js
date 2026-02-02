@@ -1,6 +1,8 @@
 const os = require('os');
 const path = require('path');
 
+const { RESET } = require('../../../color');
+
 function normalizeIo(io = {}) {
     const writeStdout =
         typeof io.writeStdout === 'function'
@@ -18,13 +20,26 @@ function writeLine(write, line = '') {
     write(`${line}\n`);
 }
 
-function expandHome(p) {
+function getEnvFromIo(io) {
+    if (io && typeof io.env === 'object' && io.env !== null) return io.env;
+    return process.env;
+}
+
+function isValidIdentifier(name) {
+    return /^[A-Z_][A-Z0-9_]*$/.test(name);
+}
+
+function wrapColor(text, colorCode, enabled) {
+    return enabled ? `${colorCode}${text}${RESET}` : text;
+}
+
+function expandHome(p, env = process.env) {
     if (!p.startsWith('~')) return p;
-    const home = process.env.HOME || process.env.USERPROFILE || os.homedir();
+    const home = env.HOME || env.USERPROFILE || os.homedir();
     if (!home) return p;
     if (p === '~') return home;
     if (p.startsWith('~/') || p.startsWith('~\\')) return path.join(home, p.slice(2));
     return p;
 }
 
-module.exports = { expandHome, normalizeIo, writeLine };
+module.exports = { expandHome, normalizeIo, writeLine, getEnvFromIo, isValidIdentifier, wrapColor };

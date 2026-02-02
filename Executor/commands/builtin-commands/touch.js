@@ -25,12 +25,13 @@ function parseTouchArgs(args) {
     return { targets, unknown };
 }
 
-function resolveTarget(rawTarget) {
-    return path.resolve(process.cwd(), expandHome(rawTarget));
+function resolveTarget(rawTarget, env) {
+    return path.resolve(process.cwd(), expandHome(rawTarget, env));
 }
 
 function touch(args, io) {
     const { writeStderr } = normalizeIo(io);
+    const env = io?.env || process.env;
     const { targets, unknown } = parseTouchArgs(args);
 
     if (unknown.length) {
@@ -47,7 +48,7 @@ function touch(args, io) {
     let exitCode = 0;
 
     for (const rawTarget of targets) {
-        const resolved = resolveTarget(rawTarget);
+        const resolved = resolveTarget(rawTarget, env);
 
         let stat = null;
         try {

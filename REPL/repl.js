@@ -6,10 +6,11 @@ const path = require('path');
 const { printHelp } = require('./help');
 const { completerFactory } = require('./completer');
 const HISTORY_FILE = path.resolve(__dirname, 'shell-history');
-const COMMANDS = ['help', 'exit', 'clear', 'cd', 'pwd', 'ls', 'mkdir', 'touch', 'rm'];
+const COMMANDS = ['help', 'exit', 'clear', 'cd', 'pwd', 'ls', 'mkdir', 'touch', 'rm', 'echo', 'export', 'env', 'unset'];
 
 const { parse } = require('../Command-Parser/parser');
 const { execute } = require('../Executor/executor');
+const { createSessionEnv } = require('../Executor/session-env');
 
 const { BOLD, ITALIC, GREEN, LIGHT_GREEN, RESET } = require('../color');
 const MESSAGE = `
@@ -36,6 +37,7 @@ function getPrompt() {
 }
 
 function startRepl() {
+    const sessionEnv = createSessionEnv();
     const completer = completerFactory(COMMANDS);
 
     const rl = readline.createInterface({
@@ -110,7 +112,7 @@ function startRepl() {
         try {
             const ast = parse(input);
             rl.pause();
-            await execute(ast);
+            await execute(ast, { env: sessionEnv });
             rl.resume();
         } catch (err) {
             console.error('Shell Error:', err.message);
