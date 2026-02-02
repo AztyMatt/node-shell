@@ -7,8 +7,6 @@ const TOKEN = {
     REDIR_FD: 'REDIR_FD',
 };
 
-// Internal sentinel used by the lexer to mark a `$` that must stay literal
-// (e.g. inside single quotes or escaped as `\$`).
 const LITERAL_DOLLAR = '\u0000';
 
 const OPERATORS = [

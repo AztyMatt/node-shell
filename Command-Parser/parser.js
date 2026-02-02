@@ -114,7 +114,6 @@ function parseWordParts(str) {
             continue;
         }
 
-        // Fallback: treat unknown $-forms as a literal '$' to avoid stalling.
         if (str[i] === '$') {
             parts.push(TextPart('$'));
             i++;

@@ -40,7 +40,6 @@ function parseDotEnvValue(raw) {
         const inner = trimmed.slice(1, -1);
         if (quote === '\'') return inner;
 
-        // Basic escape support for double-quoted values.
         return inner.replace(/\\(.)/g, (_m, ch) => {
             if (ch === 'n') return '\n';
             if (ch === 'r') return '\r';

@@ -195,7 +195,6 @@ async function executeExternal(cmdName, args, execOptions) {
 
     const child = spawn(cmdName, args, { stdio: [stdinStdio, stdoutStdio, stderrStdio], env });
 
-    // Once spawned, parent can close its copies of redirection fds.
     fdsToClose.forEach(safeCloseFd);
 
     if (stdinData != null && child.stdin) {
