@@ -113,3 +113,6 @@ cd ..
 ls -la
 echo "test" > file.txt
 exit
+ls
+cls
+clear

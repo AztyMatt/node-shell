@@ -5,7 +5,7 @@ const path = require('path');
 
 const { printHelp } = require('./help');
 const { completerFactory } = require('./completer');
-const HISTORY_FILE = path.resolve(__dirname, 'shell-history');
+const HISTORY_FILE = path.resolve(__dirname, 'myshell_history');
 const COMMANDS = ['help', 'exit', 'clear', 'cd', 'pwd', 'ls', 'mkdir', 'touch', 'rm', 'echo', 'export', 'env', 'unset'];
 
 const { parse } = require('../Command-Parser/parser');

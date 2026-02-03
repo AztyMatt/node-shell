@@ -91,7 +91,7 @@ const HELP_TOPICS = {
         {
             heading: 'DESCRIPTION',
             lines: [
-                'Each executed command is appended to the .shell-history file.',
+                'Each executed command is appended to the .myshell_history file.',
                 'On startup, this file is reloaded so previous commands can be accessed using ↑ / ↓.',
             ],
         },
