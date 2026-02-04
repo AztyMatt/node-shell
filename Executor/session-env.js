@@ -32,20 +32,47 @@ function ensureEnvMeta(env) {
 
 function parseDotEnvValue(raw) {
     if (raw == null) return '';
-    const trimmed = raw.trim();
+    const trimmed = String(raw).trim();
     if (trimmed === '') return '';
 
     const quote = trimmed[0];
-    if ((quote === '"' || quote === '\'') && trimmed.endsWith(quote)) {
-        const inner = trimmed.slice(1, -1);
-        if (quote === '\'') return inner;
+    if (quote === '"' || quote === '\'') {
+        let i = 1;
+        let out = '';
+        let closed = false;
 
-        return inner.replace(/\\(.)/g, (_m, ch) => {
-            if (ch === 'n') return '\n';
-            if (ch === 'r') return '\r';
-            if (ch === 't') return '\t';
-            return ch;
-        });
+        while (i < trimmed.length) {
+            const ch = trimmed[i];
+
+            if (ch === quote) {
+                closed = true;
+                i++;
+                break;
+            }
+
+            if (quote === '"' && ch === '\\') {
+                i++;
+                const esc = trimmed[i];
+                if (esc == null) break;
+                if (esc === 'n') out += '\n';
+                else if (esc === 'r') out += '\r';
+                else if (esc === 't') out += '\t';
+                else out += esc;
+                i++;
+                continue;
+            }
+
+            out += ch;
+            i++;
+        }
+
+        if (closed) return out;
+    }
+
+    for (let i = 0; i < trimmed.length; i++) {
+        if (trimmed[i] === '#' && (i === 0 || /\s/.test(trimmed[i - 1]))) {
+            return trimmed.slice(0, i).trimEnd();
+        }
     }
 
     return trimmed;
