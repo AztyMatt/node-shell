@@ -116,3 +116,26 @@ exit
 ls
 cls
 clear
+ls
+mkdir dossier-test
+ls
+rm dossier-test
+cd executor
+cd ..
+cds
+ls > fichier-test.js
+ls
+exit
+ls /root
+ls /system32
+cd ../system32
+cd C:\Windows\System32
+cd C.
+cd C:
+cd ../
+cd ../
+cd ../
+cd Windows/
+ls
+cd System32
+ls
